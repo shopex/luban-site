@@ -1,7 +1,7 @@
 {
     "name": "shopex/luban-site",
     "license": "MIT",
-    "description": "Luban Laravel Admin Panel",
+    "description": "Luban Laravel Site Tookit",
     "keywords": [
         "laravel",
         "site",
