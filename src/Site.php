@@ -23,18 +23,27 @@ class Site {
 	}
 
 	public function load($name){
-		if(file_exists($this->custom_widgets_dir.'/'.$name.'/main.php')){
-			$path = $this->custom_widgets_dir.'/'.$name.'/main.php';
-		}elseif(file_exists($this->global_widgets_dir.'/'.$name.'/main.php')){
-			$path = $this->global_widgets_dir.'/'.$name.'/main.php';
+
+		if(class_exists($class = $name.'\\main', true)){
+			$className = $class;
+		}elseif(class_exists($class = __NAMESPACE__.'\\Widgets\\'.$name.'\\main', true)){
+			$className = $class;
 		}else{
-			return false;
+			throw new \Exception('Widget Not Found: "'.$name.'"');
 		}
 
-		include($path);
+		// if(file_exists($this->custom_widgets_dir.'/'.$name.'/main.php')){
+		// 	$path = $this->custom_widgets_dir.'/'.$name.'/main.php';
+		// }elseif(file_exists($this->global_widgets_dir.'/'.$name.'/main.php')){
+		// 	$path = $this->global_widgets_dir.'/'.$name.'/main.php';
+		// }else{
+		// 	return false;
+		// }
 
-		$this->loaded_widgets_paths[$name] = $path;
-		$className = 'Widgets\\'.str_replace('/', '\\', $name);
+		// include($path);
+
+		// $this->loaded_widgets_paths[$name] = $path;
+		// $className = 'Widgets\\'.str_replace('/', '\\', $name);
 
 		return new $className;
 	}
