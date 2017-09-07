@@ -2,50 +2,63 @@
 namespace Shopex\LubanSite;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
 
 class Site {
 
 	private $global_widgets_dir = 'Widgets';
 	private $custom_widgets_dir = 'site/Widgets';
-	private $loaded_widgets_paths = [];
-	private $loaded_widgets = [];
+	private $widgets_loaded = [];
+	private $widgets_reslover = [];
 
 	public function routes(){
-		Route::any('site-datasets/{id}', ['uses' => 
-			'\Shopex\LubanSite\Controllers\WidgetController@fetch'])->as('site-datasets');
+		Route::any('site-bigpipe', ['uses' => 
+			'\Shopex\LubanSite\Controllers\BigPipeController@fetch'])->name('site-bigpipe');
 	}
 
 	public function widget($name, $config){
 		$obj = $this->load($name);
 		$obj->setConfig($config);
-		$this->loaded_widgets[] = $obj;
-		echo $obj->output();
+
+		if($obj->lazyLoad){
+			$obj->uniqid = uniqid();
+			$html = '<'.$obj->tagName.' widget="'.$obj->uniqid.'"></'.$obj->tagName.'>';
+		}else{
+			$html = $obj->render();
+		}
+		return new HtmlString($html);
 	}
 
 	public function load($name){
 
-		if(class_exists($class = $name.'\\main', true)){
-			$className = $class;
-		}elseif(class_exists($class = __NAMESPACE__.'\\Widgets\\'.$name.'\\main', true)){
-			$className = $class;
+		if(!isset($this->widgets_reslover[$name])){
+			$namefixed = str_replace('/', '\\', $name);
+			if(class_exists($class = $namefixed.'\\main', true)){
+				$className = $class;
+			}elseif(class_exists($class = __NAMESPACE__.'\\Widgets\\'.$namefixed.'\\main', true)){
+				$className = $class;
+			}else{
+				throw new \Exception('Widget Not Found: "'.$name.'"');
+			}
+
+			$widget = new $className;
+			$reflector = new \ReflectionClass($className);
+			$fn = $reflector->getFileName();
+			$widget->dirpath = dirname($fn);
+
+			$viewFinder = View::getFinder();
+			$viewFinder->addNamespace('widgets/'.$name, $widget->dirpath);
+			$this->widgets_reslover[$name] = [$className, $widget->dirpath];
 		}else{
-			throw new \Exception('Widget Not Found: "'.$name.'"');
+			$widget = new $this->widgets_reslover[$name][0];
+			$widget->dirpath = $this->widgets_reslover[$name][1];
 		}
 
-		// if(file_exists($this->custom_widgets_dir.'/'.$name.'/main.php')){
-		// 	$path = $this->custom_widgets_dir.'/'.$name.'/main.php';
-		// }elseif(file_exists($this->global_widgets_dir.'/'.$name.'/main.php')){
-		// 	$path = $this->global_widgets_dir.'/'.$name.'/main.php';
-		// }else{
-		// 	return false;
-		// }
+		$widget->name = $name;
+		$this->widgets_loaded[] = $widget;
 
-		// include($path);
-
-		// $this->loaded_widgets_paths[$name] = $path;
-		// $className = 'Widgets\\'.str_replace('/', '\\', $name);
-
-		return new $className;
+		return $widget;
 	}
 
 	public function render($view){

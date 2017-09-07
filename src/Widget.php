@@ -1,36 +1,29 @@
 <?php
 namespace Shopex\LubanSite;
+use Illuminate\Support\Facades\View;
 
 class Widget {
 
 	public $tagName = 'div';
 	public $attributes = [];
 	public $config = [];
-	public $loadMode = 'normal'; // normal | lazy
+	public $lazyLoad = true;
+	public $dirpath = '';
+	public $uniqid = '';
 
-	public function output(){
-		if(isset($this->attributes['class']) && isset($this->attributes['class'][0])){
-			$this->attributes['class'] .= ' widget';
-		}else{
-			$this->attributes['class'] = 'widget';
-		}
-
-		$html = $this->tagOpen($this->tagName, $this->attributes);
-		
-		ob_start();
-		$this->render();
-		$html .= ob_get_contents();
-		ob_end_clean();
-
-		return $html .$this->tagClose($this->tagName);
+	public function render(){
+		$vars = $this->vars();
+		$html = $this->tagOpen($this->tagName);
+		$html .= View::make('widgets/'.$this->name.'::main', $vars)->render();
+		return $html.$this->tagClose($this->tagName);
 	}
 
 	public function setConfig($cfg){
 		$this->config = $cfg;
 	}
 
-	public function render(){
-		return 'empty render';
+	public function vars(){
+		return [];
 	}
 
 	public function tagOpen($tag, $attributes = []){
@@ -44,5 +37,4 @@ class Widget {
 	public function tagClose($tag){
 		return '</'.$tag.'>';
 	}
-
 }
