@@ -1,5 +1,5 @@
 <?php
-namespace Shopex\LubanSite\Widgets\Shared\Block;
+namespace Shopex\LubanSite\Widgets\Shared\Block2;
 
 use Shopex\LubanSite\Widget;
 
