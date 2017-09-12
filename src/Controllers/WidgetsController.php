@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use Shopex\LubanSite\Traits\BigPipe;
 use Shopex\LubanSite\Traits\WidgetsStore;
 use Illuminate\Http\Request;
-use Hprose\Promise;
+use Shopex\LubanSite\Coroutine\Scheduler;
+// use Hprose\Promise;
 
 class WidgetsController extends Controller
 {
@@ -17,19 +18,38 @@ class WidgetsController extends Controller
 	private $proccedWidgets = [];
 
 	function fetch(Request $request){
-		$this->start();		
+		$this->start();
 		$widgets = $this->loadWidgets($request->get('widgets'));
-		$a1 = Promise\value($widgets);
-		$a1->each([$this, 'runner']);
+
+		$Scheduler = new Scheduler;
+		foreach($widgets as $obj){
+			$Scheduler->createTask( $this->runner($obj) );
+		}
+		$Scheduler->run();
 		$this->end();
 	}
 
 	function runner($obj){
 		try{
+
+			ob_start();
+			$process = $obj->process($obj->input);
+
+			if($process instanceof \Generator){
+				while($process->valid()){
+					yield $process->current();
+					$process->next();
+				}
+			}
+
+			$html = $obj->html();
+
 			$data = [
 				'id'=>$obj->id,
-				'html'=> $obj->render(),
+				'html'=> $html,
+				'error'=>ob_get_contents(),
 			];
+			ob_end_clean();
 
 			if(!isset($this->proccedWidgets[$obj->name])){
 				$data['css'] = $obj->css();
@@ -44,9 +64,9 @@ class WidgetsController extends Controller
 			$this->flush($data);
 		}catch(\Exception $e){
 			$data = [
-				'error' => $e
+				'error' => $e->getMessage()
 			];
-			$this->flush($data);			
+			$this->flush($data);	
 		}
 	}
 

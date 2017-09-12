@@ -37,7 +37,8 @@ class Site {
 		if($obj->lazyLoad){
 			$html = '<'.$obj->tagName.' widget-placeholder="'.$obj->id.'"></'.$obj->tagName.'>';
 		}else{
-			$html = $obj->render();
+			$obj->run();
+			$html = $obj->html();
 		}
 		return new HtmlString($html);
 	}
@@ -78,10 +79,13 @@ class Site {
 	public function loadWidget($name){
 
 		if(!isset($this->widgets_reslover[$name])){
+			$basename = basename($name);
 			$namefixed = str_replace('/', '\\', $name);
-			if(class_exists($class = $namefixed.'\\main', true)){
+			if(class_exists($class = '\\App\\Widgets\\'. $namefixed.'\\'.$basename, true)){
 				$className = $class;
-			}elseif(class_exists($class = __NAMESPACE__.'\\Widgets\\'.$namefixed.'\\main', true)){
+			}elseif(class_exists($class = $namefixed.'\\'.$basename, true)){
+				$className = $class;
+			}elseif(class_exists($class = __NAMESPACE__.'\\Widgets\\'.$namefixed.'\\'.$basename, true)){
 				$className = $class;
 			}else{
 				throw new \Exception('Widget Not Found: "'.$name.'"');

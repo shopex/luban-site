@@ -1,37 +1,38 @@
 <?php
 namespace Shopex\LubanSite\Coroutine;
 
-class Task {
-    protected $taskId;
+class Task
+{
+    protected $id;
     protected $coroutine;
-    protected $sendValue = null;
-    protected $beforeFirstYield = true;
+    protected $exception;
+    protected $child;
 
-    public function __construct($taskId, \Generator $coroutine) {
-        $this->taskId = $taskId;
+    public function __construct($id, \Generator $coroutine)
+    {
+        $this->id = $id;
+        $this->step = 0;
         $this->coroutine = $coroutine;
     }
 
-    public function getTaskId() {
-        return $this->taskId;
+    public function getId()
+    {
+        return $this->id;
     }
 
-    public function setSendValue($sendValue) {
-        $this->sendValue = $sendValue;
+    public function setException(\Exception $exception)
+    {
+        $this->exception = $exception;
     }
 
-    public function run() {
-        if ($this->beforeFirstYield) {
-            $this->beforeFirstYield = false;
-            return $this->coroutine->current();
-        } else {
-            $retval = $this->coroutine->send($this->sendValue);
-            $this->sendValue = null;
-            return $retval;
-        }
+    public function run()
+    {
+        $retValue = $this->coroutine->current();
+        $this->coroutine->send($retValue);
     }
 
-    public function isFinished() {
+    public function isFinished()
+    {
         return !$this->coroutine->valid();
     }
 }

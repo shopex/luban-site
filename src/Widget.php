@@ -14,31 +14,47 @@ class Widget {
 	public $id;
 	public $type_id;
 	public $name;
+	public $vars = [];
 
-	public function render(){
-		//todo: widgets-cache-ttl
+	public function run(){
+		$ret = $this->process($this->input);
+		if($ret instanceof \Generator){
+			while($ret->valid()){
+				$ret->current();
+				$ret->next();
+			}
+		}
+	}
 
+	public function async_run(){
+		return $this->process($this->input);
+	}
+
+	public function html(){
 		$viewFinder = View::getFinder();
 		$viewFinder->addNamespace('widgets/'.$this->name, $this->dirpath);
-
-		$output_vars = $this->process($this->input);
 		$html = $this->tagOpen($this->tagName);
-		$html .= View::make('widgets/'.$this->name.'::main', $output_vars)->render();
+		$html .= View::make('widgets/'.$this->name.'::widget', $this->vars)->render();
 		$html .= $this->tagClose($this->tagName);
-
 		return $html;
 	}
 
 	public function js(){
-		return '$.widgets(".widget-type-'.$this->type_id.'",'.file_get_contents($this->dirpath.'/main.js').')';
+		if(!file_exists($this->dirpath.'/widget.js')){
+			return '';
+		}
+		return '$.widgets(".widget-type-'.$this->type_id.'",'.file_get_contents($this->dirpath.'/widget.js').')';
 	}
 
 	public function css(){
+		if(!file_exists($this->dirpath.'/widget.scss')){
+			return '';
+		}
 		$scss_compiler = new SassCompiler;
 		$scss_compiler->setImportPaths([base_path().'/resources/assets/sass', $this->dirpath]);
 		$string_sass = '@import "variables";';
 		$string_sass .= '.widget-type-'.$this->type_id.'{';
-		$string_sass .= file_get_contents($this->dirpath.'/main.scss');
+		$string_sass .= file_get_contents($this->dirpath.'/widget.scss');
 		$string_sass .= '}';
 		$string_css = $scss_compiler->compile($string_sass);
 		return $string_css;

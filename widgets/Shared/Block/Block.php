@@ -2,14 +2,15 @@
 namespace Shopex\LubanSite\Widgets\Shared\Block;
 
 use Shopex\LubanSite\Widget;
+use Shopex\Luban\Facades\Luban;
 
-class main extends Widget{
+class Block extends Widget{
 
 	// var $lazyLoad = false;
 	// var $publicCache = true;
 
 	function process($input){
-		return $input;
+		$this->vars = $input;
 	}
 
 }
