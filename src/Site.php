@@ -20,7 +20,7 @@ class Site {
 	private $widgets_loaded_cnt = 0;
 	private $current_widget_id = 0;
 	private $expired = 0;
-
+	private $objectDatasources = [];
 	public function publicCacheTTL($ttl){
 		$this->expired = time() + $ttl;
 	}
@@ -111,5 +111,40 @@ class Site {
 		$this->current_widget_id++;
 		return $widget;
 	}
+	public function datasource()
+	{
+		$regiestorys = [];
+		$datasource_items = [];
+		foreach ($this->objectDatasources as $name => $row) {
+			$regiestory['name'] = $row->title();
+			$regiestory['code'] = $row->getType();
+			foreach ($row->_searchs as $key => $search) {
+				$filter['label'] = $search->label;
+				$filter['key'] = $search->key;
+				$filter['type'] = $search->type;
+				$regiestory['filters'][] = $filter;
+			}
+			foreach ($row->_sorts as $key => $sort) {
+				$regiestory['sort_by'][] = ['label'=>$sort->label,'orderBy'=>$sort->orderBy];
+			}
+			$regiestorys[]= $regiestory;
+		}
+		return ['regiestorys'=>$regiestorys];
+	}
+	public function objectDatasource($name)
+	{
+		return $this->objectDatasources[$name];
+	}
+	public function setObjectDatasouce($name,$datasource)
+	{
+		return $this->objectDatasources[$name] = $datasource;
+	}
+	public function registerDataSource($name,$model,$title){
+		$datasource = new Datasource();
+		$datasource->setModel($model)->setType($name)->setTitle($title);
+		$this->setObjectDatasouce($name,$datasource);
+		return $datasource;
+	}
+	
 
 } 
