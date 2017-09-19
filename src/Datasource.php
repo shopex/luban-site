@@ -83,7 +83,7 @@ class Datasource extends Finder
 	}
 	public function dataGet(){
 		$data = $this->getList()->toArray();
-		$item = [];
+		$item = $items= [];
 		foreach($data as $row){
 			foreach($this->_columns as $i=>$col){
 				$item[$col->mapkey] = $col->key?$row[$col->key]:'';
